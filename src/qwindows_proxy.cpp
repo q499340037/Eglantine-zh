@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Loads the official Qt platform plugin, then registers zh_CN.rcc at :/languages.
-// Qt 6.8 accepts a platform DLL only when a read-only .qtmetad section starts
-// with "QTMETADATA !". Those bytes are copied from the official qwindows.dll.
+// 先加载官方 Qt 平台插件，再把 zh_CN.rcc 注册到 :/languages。
+// Qt 6.8 只接受带有只读 .qtmetad 节、且以 “QTMETADATA !” 开头的平台插件。
+// 这 127 字节复制自官方 qwindows.dll。
 
 #pragma section(".qtmetadata", read)
 #include <windows.h>
@@ -37,8 +37,8 @@ static bool module_dir(wchar_t* dir, DWORD cch) {
     return true;
 }
 
-// plugins\platforms\qwindows.dll and platforms\qwindows.dll are both used.
-// Walk up until languages\ sits next to the emulator.
+// 程序可能从 plugins\platforms 或 platforms 加载本插件。
+// 从插件所在目录向上查找，直到 languages 和模拟器放在一起。
 static bool find_languages_dir(wchar_t* out, DWORD cch) {
     wchar_t dir[MAX_PATH];
     if (!module_dir(dir, MAX_PATH))
@@ -79,7 +79,7 @@ static bool register_chinese() {
     wchar_t dir[MAX_PATH];
     wchar_t path[MAX_PATH];
     if (!find_languages_dir(dir, MAX_PATH)) {
-        note(L"languages directory not found");
+        note(L"没有找到 languages 目录");
         return false;
     }
     if (swprintf_s(path, L"%s\\zh_CN.rcc", dir) < 0)
@@ -88,13 +88,13 @@ static bool register_chinese() {
     HANDLE file = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING,
                               FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE) {
-        note(L"zh_CN.rcc missing");
+        note(L"没有找到 zh_CN.rcc");
         return false;
     }
     LARGE_INTEGER size{};
     if (!GetFileSizeEx(file, &size) || size.QuadPart < 20 || size.QuadPart > 64 * 1024 * 1024) {
         CloseHandle(file);
-        note(L"zh_CN.rcc size rejected");
+        note(L"zh_CN.rcc 的大小不正确");
         return false;
     }
     g_rcc.resize((size_t)size.QuadPart);
@@ -102,13 +102,13 @@ static bool register_chinese() {
     BOOL ok = ReadFile(file, g_rcc.data(), (DWORD)g_rcc.size(), &got, nullptr);
     CloseHandle(file);
     if (!ok || got != g_rcc.size()) {
-        note(L"zh_CN.rcc read failed");
+        note(L"读取 zh_CN.rcc 失败");
         return false;
     }
 
     const unsigned char* b = g_rcc.data();
     if (b[0] != 'q' || b[1] != 'r' || b[2] != 'e' || b[3] != 's') {
-        note(L"zh_CN.rcc bad magic");
+        note(L"zh_CN.rcc 不是有效的 Qt 资源文件");
         return false;
     }
     const int version = be32(b + 4);
@@ -116,19 +116,19 @@ static bool register_chinese() {
     const int data_off = be32(b + 12);
     const int name_off = be32(b + 16);
     if (version < 1 || version > 3) {
-        note(L"zh_CN.rcc bad version");
+        note(L"zh_CN.rcc 的版本不受支持");
         return false;
     }
     const int nbytes = (int)g_rcc.size();
     if (tree_off >= nbytes || data_off >= nbytes || name_off >= nbytes) {
-        note(L"zh_CN.rcc bad offsets");
+        note(L"zh_CN.rcc 的内容已损坏");
         return false;
     }
     if (version >= 3) {
         const int flags = be32(b + 20);
-        // Compressed = 0x01, CompressedZstd = 0x04. This pack is uncompressed.
+        // 0x01 是 zlib，0x04 是 zstd。本翻译包不压缩。
         if (flags & ~0x01) {
-            note(L"zh_CN.rcc uses a compression Qt cannot read");
+            note(L"zh_CN.rcc 使用了当前程序无法读取的压缩");
             return false;
         }
     }
@@ -137,20 +137,20 @@ static bool register_chinese() {
     if (!core)
         core = LoadLibraryW(L"Qt6Core.dll");
     if (!core) {
-        note(L"Qt6Core.dll not loaded");
+        note(L"没有加载 Qt6Core.dll");
         return false;
     }
     using RegFn = bool (*)(int, const unsigned char*, const unsigned char*, const unsigned char*);
     auto reg = (RegFn)GetProcAddress(core, "?qRegisterResourceData@@YA_NHPEBE00@Z");
     if (!reg) {
-        note(L"qRegisterResourceData missing");
+        note(L"找不到注册翻译所需的 Qt 函数");
         return false;
     }
     if (!reg(version, b + tree_off, b + name_off, b + data_off)) {
-        note(L"qRegisterResourceData returned false");
+        note(L"注册中文翻译失败");
         return false;
     }
-    note(L"registered :/languages/zh_CN.qm");
+    note(L"已注册界面翻译 :/languages/zh_CN.qm");
     return true;
 }
 
@@ -165,7 +165,7 @@ static void ensure_real() {
     wchar_t dir[MAX_PATH];
     wchar_t path[MAX_PATH];
     if (!module_dir(dir, MAX_PATH)) {
-        note(L"module path unavailable");
+        note(L"无法取得插件自身的路径");
         return;
     }
     bool found = false;
@@ -181,16 +181,16 @@ static void ensure_real() {
         *slash = 0;
     }
     if (!found) {
-        note(L"qwindows_real.dll not found");
+        note(L"没有找到 qwindows_real.dll");
         return;
     }
     g_real = LoadLibraryW(path);
     if (!g_real) {
-        note(L"failed to load qwindows_real.dll");
+        note(L"加载 qwindows_real.dll 失败");
         return;
     }
     if (GetProcAddress(g_real, "eglantine_zh_proxy")) {
-        note(L"qwindows_real.dll is this language proxy, not the official Qt plugin");
+        note(L"qwindows_real.dll 是本中文插件，不是官方 Qt 插件");
         FreeLibrary(g_real);
         g_real = nullptr;
         return;
@@ -198,12 +198,12 @@ static void ensure_real() {
     register_chinese();
 }
 
-// Qt 6.8 returns this 16-byte struct by value (MSVC x64 hidden return pointer).
+// Qt 6.8 按值返回这个 16 字节结构。
 struct PluginMeta {
     const void* data;
     size_t size;
 };
-static_assert(sizeof(PluginMeta) == 16, "QPluginMetaData ABI");
+static_assert(sizeof(PluginMeta) == 16, "元数据结构必须是 16 字节");
 
 extern "C" __declspec(dllexport) int eglantine_zh_proxy() {
     return 1;

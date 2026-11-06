@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Align an upstream Eglantine zh_CN.ts file with one Windows build.
+"""把上游简体中文翻译和某一份 Windows 版 Eglantine 里的原文对齐。
 
-The shipped lang/zh_CN.ts is already aligned. Run this only when a newer
-emulator renames Eden strings to Eglantine. Strings are matched as UTF-8 or
-UTF-16LE, because several menu strings exist only as UTF-16 in the binary.
+仓库里的 lang/zh_CN.ts 已经对齐过。只有更新后的程序把 Eden 改成了
+Eglantine 时才需要重跑。程序里有些菜单原文只有 UTF-16，所以两种编码都查。
 """
 import argparse
 import xml.etree.ElementTree as ET
@@ -24,10 +23,20 @@ def in_exe(blob: bytes, text: str) -> bool:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--ts", type=Path, required=True)
-    parser.add_argument("--exe", type=Path, required=True)
-    parser.add_argument("--out", type=Path, required=True)
+    class _ChineseHelp(argparse.HelpFormatter):
+        def add_usage(self, usage, actions, groups, prefix=None):
+            return super().add_usage(usage, actions, groups, prefix="用法：")
+
+    parser = argparse.ArgumentParser(
+        description="把上游简体中文翻译和当前程序中的原文对齐。",
+        formatter_class=_ChineseHelp,
+        add_help=False,
+    )
+    parser._optionals.title = "参数"
+    parser.add_argument("-h", "--help", action="help", help="显示帮助并退出")
+    parser.add_argument("--ts", type=Path, required=True, help="上游 zh_CN.ts 的路径")
+    parser.add_argument("--exe", type=Path, required=True, help="eglantine.exe 的路径")
+    parser.add_argument("--out", type=Path, required=True, help="对齐后的 ts 输出路径")
     args = parser.parse_args()
     blob = args.exe.read_bytes()
     tree = ET.parse(args.ts)
@@ -69,7 +78,10 @@ def main() -> None:
                 child.tail = child.tail.replace("Eden", "Eglantine")
                 branded += 1
     tree.write(args.out, encoding="utf-8", xml_declaration=True)
-    print(f"renamed={renamed} kept={kept} missing={missing} filled={filled} branded={branded}")
+    print(
+        f"已改名 {renamed} 条，保留 {kept} 条，程序中未找到 {missing} 条，"
+        f"补译 {filled} 条，产品名替换 {branded} 处"
+    )
 
 
 if __name__ == "__main__":

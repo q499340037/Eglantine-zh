@@ -1,5 +1,5 @@
-# Install the Eglantine Simplified Chinese UI plugin into one emulator folder.
-# Usage: .\install.ps1 -EmuDir "D:\Eglantine"
+﻿# 把简体中文界面插件装进一个 Eglantine 目录。
+# 用法：.\install.ps1 -EmuDir "D:\Eglantine"
 param(
     [string]$EmuDir
 )
@@ -102,11 +102,11 @@ function Set-UiLanguage([string]$path) {
         $updated += "Paths\language\default=false`r`n"
     }
     if ($updated -eq $text) {
-        Write-Host "界面语言已是 zh_CN: $path"
+        Write-Host "界面语言已经是简体中文：$path"
         return
     }
     [System.IO.File]::WriteAllBytes($path, $enc.GetBytes($updated))
-    Write-Host "已把界面语言设为 zh_CN: $path"
+    Write-Host "已把界面语言设为简体中文：$path"
 }
 
 $configs = @(
@@ -120,7 +120,7 @@ $configs = @(
 if ($configs) {
     foreach ($cfg in $configs) { Set-UiLanguage $cfg }
 } else {
-    Write-Host "没有找到 qt-config.ini。中文 Windows 会按系统语言加载。若界面仍是英文，在配置里把 Paths\language 设为 zh_CN。"
+    Write-Host "没有找到配置文件。中文 Windows 会按系统语言加载。若界面仍是英文，请把配置中的 Paths\language 设为 zh_CN。"
 }
 
 Write-Host "安装完成。重新打开 Eglantine 后，菜单应为中文。游戏语言不会被修改。"

@@ -1,5 +1,5 @@
-# Restore the official Qt platform plugin and the English UI language.
-# Usage: .\uninstall.ps1 -EmuDir "D:\Eglantine"
+﻿# 恢复官方平台插件，并把界面语言改回英文。
+# 用法：.\uninstall.ps1 -EmuDir "D:\Eglantine"
 param(
     [string]$EmuDir
 )
@@ -65,7 +65,7 @@ function Set-English([string]$path) {
     if ($updated -ne $text) {
         [System.IO.File]::WriteAllBytes($path, $enc.GetBytes($updated))
     }
-    Write-Host "界面语言已改回 en: $path"
+    Write-Host "界面语言已改回英文：$path"
 }
 
 @(
