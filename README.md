@@ -38,9 +38,6 @@ uninstall.bat -EmuDir "D:\你的模拟器目录"
 
 官方插件会从 `qwindows_real.dll` 写回去，界面语言改回英文。
 
-## 仍然是英文的文字
-
-滤镜和后端名称保持原文：FX、FXAA、SCALEFORCE、HANDHELD、ACCURATE、VULKAN。部分状态文字（例如 Directory、Not scanned）和窗口标题里的产品名 Eglantine 也保持英文。没有附带 Qt 自带对话框的翻译，所以个别系统按钮仍是确定和取消的英文。这个插件只翻译模拟器界面，不翻译游戏内文字。
 
 ## 自己编译
 
