@@ -1,0 +1,6 @@
+* text=auto
+*.dll binary
+*.qm binary
+*.rcc binary
+*.ts text eol=lf
+src/qtmeta.inc linguist-vendored

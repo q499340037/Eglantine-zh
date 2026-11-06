@@ -1,0 +1,9 @@
+*.obj
+*.exp
+*.lib
+*.pdb
+*.ilk
+*.log
+.venv/
+__pycache__/
+build/
