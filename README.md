@@ -1,10 +1,6 @@
 # Eglantine-zh
 
-这是给 Windows 版 [Eglantine](https://github.com/Djihads80/Eglantine) 准备的简体中文界面插件。装进自己的模拟器目录后，菜单和设置会变成中文。仓库里没有模拟器、游戏、密钥或固件。
-
-官方仓库的 `dist/languages/zh_CN.ts` 里已经有简体中文，但这份 Windows 构建没有把翻译打进程序。插件在启动时注册 `:/languages/zh_CN.qm`，模拟器自己的加载逻辑就能读到它。
-
-已在 **Eglantine e85c099005-nx2、Qt 6.8.3、MSVC 19.44** 上验证。菜单显示为：文件、模拟、视图、工具、多人游戏、帮助。
+这是给 Windows 版 [Eglantine](https://github.com/Djihads80/Eglantine) 准备的中文汉化插件。
 
 ## 安装
 
@@ -63,9 +59,6 @@ rcc -binary -no-compress --no-zstd lang\zh_CN.qrc -o lang\zh_CN.rcc
 python tools\align_ts.py --ts 上游的zh_CN.ts --exe eglantine.exe --out lang\zh_CN.ts
 ```
 
-## 原理
-
-Qt 6.8 在真正加载平台插件之前，会检查动态库里只读的 `.qtmetad` 节是否以 `QTMETADATA !` 开头。本插件带有从官方 `qwindows.dll` 复制的 127 字节元数据，所以能被接受。加载后它转调旁边的 `qwindows_real.dll`，并注册中文翻译。注册发生在界面读取语言之前。失败时仍会加载官方插件，界面保持英文。
 
 ## 许可
 
